@@ -1,0 +1,104 @@
+*chimp.txt*                    Chimp
+
+Chimp
+=====
+
+Introduction
+------------
+
+Chimp is a library to provide access to external interpreters from inside Vim.
+The connection is made via the cut'n'paste buffer of a screen with the
+interpreter running inside. It is similar to VILisp or Limp, but stripped
+down on purpose. It is totally agnostic to what process it sends data or what
+this data looks like.
+
+The frontend side is obviously language dependent. It can be realised by a
+ftplugin for the language. It handles the extraction of meaningful thunks of
+text and hands that over to the generic chimp library.
+
+The interpreter should be started with the "chimp.sh" wrapper. It sets up
+screen as needed for the transactions and fires up the interpreter. The screen
+program as well as the buffer directory are configurable. However the
+invocation of "chimp.sh" and the values in the vim configuration must agree.
+
+A sample ftplugin for Clojure is supplied with the distribution. See
+|clojurechimp.txt|.
+
+Chimp should also work on Windows with Cygwin and screen. Assume you have
+Cygwin installed in C:\Cygwin. Then set ScreenCommand and BufferDirectory
+in your _vimrc:
+>
+        let chimp#ScreenCommand = 'C:\Cygwin\bin\screen.exe'
+        let chimp#BufferDirectory = 'C:\Cygwin\tmp'
+<
+However this is not very well tested. Experience reports appreciated.
+
+CONTENTS
+--------
+
+SendMessage                                     |chimp#SendMessage|
+SendLines                                       |chimp#SendLines|
+ScreenCommand                                   |chimp#ScreenCommand|
+BufferDirectory                                 |chimp#BufferDirectory|
+License                                         |chimp-License|
+
+                                                *chimp#SendMessage*
+SendMessage
+-----------
+>
+        call chimp#SendMessage(chimpId, msg)
+<
+Send the given message to the screen identified by chimpId.
+
+                                                *chimp#SendLines*
+SendLines
+---------
+>
+        call chimp#SendLines(chimpId, lines)
+<
+Send the array of lines to the screen identified by chimpId.
+
+                                                *chimp#ScreenCommand*
+ScreenCommand
+-------------
+>
+        let chimp#ScreenCommand = "/some/other/screen"
+<
+The command used to invoke screen. To set with chimp.sh use -s.
+
+                                                *chimp#BufferDirectory*
+BufferDirectory
+---------------
+>
+        let chimp#BufferDirectory = "/tmp"
+<
+The directory where the buffer files are stored. These files will be deleted
+after the interpreter exits. To set with chimp.sh use -d.
+
+                                                *chimp-License*
+License
+-------
+
+Copyright (c) 2008 Meikel Brandmeyer, Frankfurt am Main
+All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+==============================================================================
+.. vim: set ft=help norl ts=8 tw=78 et :

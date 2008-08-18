@@ -1,0 +1,29 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=2348
+
+Chimp uses screen to talk to external interpreters. The basic screen driver
+is language agnostic and is intended to be used as backend for filetype
+plugins, which comprise the intelligence of the system.
+
+An example filetype plugin for Clojure is included. There are several ways
+to extract code and send it to a running Clojure in a screen.
+
+The coupling is very loose on purpose! Eg. one can send from several Vims
+to the same screen. However this leads to a certain fragileness. The Clojure
+plugin takes care of automatically switching namespaces for the different
+files being edited. However, nothing prevents the user from interacting
+with the REPL directly messing up the namespace sync between Chimp in Vim
+and Clojure.
+
+Chimp should also work on Windows with Cygwin.
+
+You will also need the VimClojure filetype plugin for
+the Clojure frontend.
+
+http://kotka.de/projects/clojure/vimclojure.html
+
+Similar scripts:
+ - VILisp (vimscript #221)
+ - Limp (vimscript #2219)
+ - http://technotales.wordpress.com/2007/10/03/like-slime-for-vim/
+
+
