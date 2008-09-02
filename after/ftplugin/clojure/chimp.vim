@@ -47,6 +47,7 @@ endif
 "###### [ }}} ]
 
 "###### FUNCTIONS [ {{{ ]
+"#### Plugs & Mappings [ {{{ ]
 function! s:MakePlug(mode, plug, f)
 	execute a:mode . "noremap <Plug>ClojureChimp" . a:plug
 				\ . " :call <SID>" . a:f . "<CR>"
@@ -58,7 +59,45 @@ function! s:MapPlug(mode, keys, plug)
 					\ . " <Plug>ClojureChimp" . a:plug
 	endif
 endfunction
+"#### [ }}} ]
+"#### Support Functions [ {{{ ]
+function! s:SynItem()
+	return synIDattr(synID(line("."), col("."), 0), "name")
+endfunction
 
+function! s:WithSaved(closure)
+	let v = a:closure.get(a:closure.tosafe)
+	let r = a:closure.f()
+	call a:closure.set(a:closure.tosafe, v)
+	return r
+endfunction
+
+function! s:WithSavedRegister(reg, closure)
+	let a:closure['tosafe'] = a:reg
+	let a:closure['get'] = function("getreg")
+	let a:closure['set'] = function("setreg")
+	return s:WithSaved(a:closure)
+endfunction
+
+function! s:WithSavedPosition(closure)
+	let a:closure['tosafe'] = "."
+	let a:closure['get'] = function("getpos")
+	let a:closure['set'] = function("setpos")
+	return s:WithSaved(a:closure)
+endfunction
+
+function! s:Yank(reg, how)
+	let closure = {'register': a:reg, 'yank': a:how}
+
+	function closure.f() dict
+		execute self.yank
+		return getreg(self.register)
+	endfunction
+
+	return s:WithSavedRegister(a:reg, closure)
+endfunction
+"#### [ }}} ]
+"#### Worker Functions [ {{{ ]
 function! s:Connect()
 	if !exists("s:ChimpId")
 		let s:ChimpId = input("Please give Chimp Id: ")
@@ -70,23 +109,25 @@ function! s:ResetChimp()
 	call s:Connect()
 endfunction
 
-function! s:GetBufferNamespace()
-	let cursor = getpos(".")
-
-	if search('^(\(clojure/\)\=in-ns', "b") == 0
-		if search('^(\(clojure/\)\=in-ns') == 0
-			let b:ClojureChimpNamespace = "user"
-			return
+function! s:GetBufferNamespaceWorker() dict
+	if search('^(\(clojure/\)\=\(in-\)\=ns', "b") == 0
+		if search('^(\(clojure/\)\=\(in-\)\=ns') == 0
+			return "user"
 		endif
 	endif
 
-	let ns = substitute(getline("."),
-				\ "^(\\(clojure/\\)\\=in-ns '\\(.*\\)).*",
-				\ "\\2", "")
+	" Try again if we are in a comment.
+	if s:SynItem() == "clojureComment"
+		return self.f()
+	end
 
-	let b:ClojureChimpNamespace = ns
+	normal W
+	return substitute(s:Yank('l', 'normal "lye'), "^'", "", "")
+endfunction
 
-	call setpos(".", cursor)
+function! s:GetBufferNamespace()
+	let b:ClojureChimpNamespace = s:WithSavedPosition(
+				\ {'f': function("s:GetBufferNamespaceWorker")})
 endfunction
 
 function! s:ChangeNamespace(ns)
@@ -111,64 +152,46 @@ function! s:SwitchNamespace()
 	call s:ChangeNamespace(ns)
 endfunction
 
-function! s:Yank(how)
-	let save_l = @l
-	execute a:how
-	let text = @l
-	let @l = save_l
-	return text
-endfunction
-
 function! s:EvalBlock() range
 	call s:Connect()
 	call s:ChangeNamespaceIfNecessary()
 
-	let b = s:Yank(a:firstline . "," . a:lastline . "yank l")
+	let b = s:Yank("l", a:firstline . "," . a:lastline . "yank l")
 
 	call chimp#SendMessage(s:ChimpId, b)
 endfunction
 
-function! s:SendSexp(innerOrTop)
-	if a:innerOrTop == 'top'
-		let addFlags = 'r'
-	else
-		let addFlags = ''
-	endif
-
+function! s:SendSexp() dict
 	call s:Connect()
 	call s:ChangeNamespaceIfNecessary()
 
-	let cursor = getpos(".")
-
-	let p = searchpairpos('(', '', ')', 'bW' . addFlags,
-				\ 'synIDattr(synID(line("."), col("."), 0), "name") != "Delimiter"')
-	if p != [0, 0]
-		let sexp = s:Yank('normal "ly%')
-
+	if searchpairpos('(', '', ')', 'bW' . self.flags,
+				\ 's:SynItem() !~ "clojureParen\\d"') != [0, 0]
+		let sexp = s:Yank('l', 'normal "ly%')
 		call chimp#SendMessage(s:ChimpId, sexp)
-
-		call setpos(".", cursor)
 	endif
 endfunction
 
 function! s:EvalInnerSexp()
-	call s:SendSexp('inner')
+	call s:WithSavedPosition({'f': function("s:SendSexp"), 'flags': ''})
 endfunction
 
 function! s:EvalTopSexp()
-	call s:SendSexp('top')
+	call s:WithSavedPosition({'f': function("s:SendSexp"), 'flags': 'r'})
 endfunction
 
-function! s:LoadFile(fname)
+function! s:EvalFile(fname)
 	call s:Connect()
 	call s:ChangeNamespaceIfNecessary()
 
-	let c = getpos(".")
-	let msg = s:Yank('normal ggVG"ly')
-	call setpos(".", c)
+	let closure = {}
+	function closure.f() dict
+		return s:Yank('l', 'normal ggVG"ly')
+	endfunction
 
-	call chimp#SendMessage(s:ChimpId, msg)
+	call chimp#SendMessage(s:ChimpId, s:WithSavedPosition(closure))
 endfunction
+"#### [ }}} ]
 "###### [ }}} ]
 
 "###### MAPS [ {{{ ]
@@ -176,21 +199,17 @@ if !exists("no_plugin_maps") && !exists("no_clojure_chimp_maps")
 	call s:MakePlug('v', 'EvalBlock', 'EvalBlock()')
 	call s:MakePlug('n', 'EvalInnerSexp', 'EvalInnerSexp()')
 	call s:MakePlug('n', 'EvalTopSexp', 'EvalTopSexp()')
-	call s:MakePlug('n', 'LoadFile', 'LoadFile(expand("%:p"))')
+	call s:MakePlug('n', 'EvalFile', 'EvalFile()')
 	call s:MakePlug('n', 'ResetChimp', 'ResetChimp()')
 	call s:MakePlug('n', 'SwitchNamespace', 'SwitchNamespace()')
 
 	call s:MapPlug('v', 'eb', 'EvalBlock')
 	call s:MapPlug('n', 'es', 'EvalInnerSexp')
 	call s:MapPlug('n', 'et', 'EvalTopSexp')
-	call s:MapPlug('n', 'ef', 'LoadFile')
+	call s:MapPlug('n', 'ef', 'EvalFile')
 	call s:MapPlug('n', 'rc', 'ResetChimp')
 	call s:MapPlug('n', 'sn', 'SwitchNamespace')
 endif
-"###### [ }}} ]
-
-"###### COMMANDS [ {{{ ]
-command! -nargs=1 -complete=file -buffer LoadFile call <SID>LoadFile(<f-args>)
 "###### [ }}} ]
 
 "###### EPILOG [ {{{ ]

@@ -27,10 +27,15 @@ It tells you a "Chimp Id" in the bottom line of the screen. Supply this
 to the glue functions. The Clojure plugin will ask you the first time
 you send data and will further cache the Id.
 
+This Clojure part of the script needs the VimClojure filetype plugin for
+Clojure. It may be found here:
+
+  http://kotka.de/projects/clojure/vimclojure.html
+
 Similar scripts:
  - VILisp
  - Limp
  - http://technotales.wordpress.com/2007/10/03/like-slime-for-vim/
 
 Meikel Brandmeyer <mb@kotka.de>
-Frankfurt am Main, August 16th 2008
+Frankfurt am Main, September 2nd 2008

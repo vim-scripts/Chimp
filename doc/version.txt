@@ -2,5 +2,5 @@
   version.txt -- Version Information for chimp (syntax: Text)
   [automatically generated and maintained by GNU shtool]
 
-  This is chimp, Version 1.0.0 (19-Aug-2008)
+  This is chimp, Version 1.1.0 (03-Sep-2008)
 
