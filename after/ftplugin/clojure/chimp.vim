@@ -180,7 +180,7 @@ function! s:EvalTopSexp()
 	call s:WithSavedPosition({'f': function("s:SendSexp"), 'flags': 'r'})
 endfunction
 
-function! s:EvalFile(fname)
+function! s:EvalFile()
 	call s:Connect()
 	call s:ChangeNamespaceIfNecessary()
 
@@ -190,6 +190,34 @@ function! s:EvalFile(fname)
 	endfunction
 
 	call chimp#SendMessage(s:ChimpId, s:WithSavedPosition(closure))
+endfunction
+
+function! s:LookupDoc(word)
+	call s:Connect()
+	call s:ChangeNamespaceIfNecessary()
+
+	let w =
+				\ a:word == ""
+				\ ? input("Which word to look up? ")
+				\ : a:word
+
+	call chimp#SendMessage(s:ChimpId, '(doc ' . w . ')')
+endfunction
+
+function! s:FindDoc()
+	call s:Connect()
+	call s:ChangeNamespaceIfNecessary()
+
+	let p = input("Which pattern to look for? ")
+	let p = escape(p, '"\')
+
+	call chimp#SendMessage(s:ChimpId, '(find-doc "' . p . '")')
+endfunction
+
+function! s:PrintException()
+	call s:Connect()
+
+	call chimp#SendMessage(s:ChimpId, '(println *e) (. *e printStackTrace)')
 endfunction
 "#### [ }}} ]
 "###### [ }}} ]
@@ -202,6 +230,10 @@ if !exists("no_plugin_maps") && !exists("no_clojure_chimp_maps")
 	call s:MakePlug('n', 'EvalFile', 'EvalFile()')
 	call s:MakePlug('n', 'ResetChimp', 'ResetChimp()')
 	call s:MakePlug('n', 'SwitchNamespace', 'SwitchNamespace()')
+	call s:MakePlug('n', 'DocForWord', 'LookupDoc(expand("<cword>"))')
+	call s:MakePlug('n', 'LookupDoc', 'LookupDoc("")')
+	call s:MakePlug('n', 'FindDoc', 'FindDoc()')
+	call s:MakePlug('n', 'PrintException', 'PrintException()')
 
 	call s:MapPlug('v', 'eb', 'EvalBlock')
 	call s:MapPlug('n', 'es', 'EvalInnerSexp')
@@ -209,6 +241,10 @@ if !exists("no_plugin_maps") && !exists("no_clojure_chimp_maps")
 	call s:MapPlug('n', 'ef', 'EvalFile')
 	call s:MapPlug('n', 'rc', 'ResetChimp')
 	call s:MapPlug('n', 'sn', 'SwitchNamespace')
+	call s:MapPlug('n', 'dw', 'DocForWord')
+	call s:MapPlug('n', 'ld', 'LookupDoc')
+	call s:MapPlug('n', 'fd', 'FindDoc')
+	call s:MapPlug('n', 'pe', 'PrintException')
 endif
 "###### [ }}} ]
 

@@ -45,6 +45,25 @@ Keybindings
                         in the REPL! Always use this shortcut!
                         Mnemomic: Switch Namespace
 
+<LocalLeader>dw                                 *dw* *DocWord*
+                        Lookup up the word under the cursor and print
+                        the documentation for it via (doc).
+                        Mnemonic: Documentation for Word
+
+<LocalLeader>ld                                 *ld* *LookupDocumentation*
+                        Lookup the documentation of an arbitrary word.
+                        The user is prompted for input.
+                        Mnemonic: Lookup Documentation
+
+<LocalLeader>fd                                 *fd* *FindDocumentation*
+                        Find a the documentation for a given pattern
+                        with (find-doc). The user is prompted for input.
+                        Mnemonic: Find Documentation
+
+<LocalLeader>pe                                 *pe* *PrintException*
+                        Print the last thrown exception stored in *e.
+                        Mnemonic: Print Exception
+
 License
 -------
 
